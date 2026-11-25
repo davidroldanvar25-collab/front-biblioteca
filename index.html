@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca · Registro de libros</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__inner">
+      <div class="brand">
+        <span class="brand__logo" aria-hidden="true">📚</span>
+        <div>
+          <h1>Biblioteca</h1>
+          <p>Catálogo de libros conectado a MongoDB</p>
+        </div>
+      </div>
+      <button type="button" id="open-form-btn" class="btn btn--light">+ Nuevo libro</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Estadísticas -->
+    <section class="stats" aria-label="Resumen">
+      <article class="stat">
+        <span class="stat__icon">📚</span>
+        <div><p class="stat__value" id="stat-total">0</p><p class="stat__label">Libros</p></div>
+      </article>
+      <article class="stat">
+        <span class="stat__icon">✅</span>
+        <div><p class="stat__value" id="stat-disponibles">0%</p><p class="stat__label">Disponibles</p></div>
+      </article>
+      <article class="stat">
+        <span class="stat__icon">✍️</span>
+        <div><p class="stat__value" id="stat-autores">0</p><p class="stat__label">Autores distintos</p></div>
+      </article>
+      <article class="stat">
+        <span class="stat__icon">⭐</span>
+        <div><p class="stat__value" id="stat-genero">—</p><p class="stat__label">Género más común</p></div>
+      </article>
+    </section>
+
+    <!-- Barra de búsqueda y filtros -->
+    <section class="toolbar">
+      <div class="search">
+        <span aria-hidden="true">🔍</span>
+        <input type="search" id="search-input" placeholder="Buscar por título o autor..." />
+      </div>
+      <div class="toolbar__group">
+        <select id="sort-select" aria-label="Ordenar">
+          <option value="recientes">Más recientes</option>
+          <option value="titulo">Título (A-Z)</option>
+          <option value="anio-asc">Más antiguos</option>
+          <option value="anio-desc">Más nuevos</option>
+        </select>
+        <div class="segmented" role="group" aria-label="Filtrar por disponibilidad">
+          <button type="button" class="segmented__btn is-active" data-vac="todas">Todos</button>
+          <button type="button" class="segmented__btn" data-vac="si">Disponibles</button>
+          <button type="button" class="segmented__btn" data-vac="no">Prestados</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="species-chips" class="chips" aria-label="Filtrar por género"></div>
+
+    <!-- Lista -->
+    <section id="pet-grid" class="grid" aria-live="polite"></section>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p id="loading-text">Cargando libros...</p>
+    </div>
+
+    <div id="empty" class="empty" hidden>
+      <span class="empty__icon">📖</span>
+      <h3 id="empty-title">Aún no hay libros</h3>
+      <p id="empty-text">Registra el primero con el botón “Nuevo libro”.</p>
+    </div>
+  </main>
+
+  <!-- Modal crear / editar -->
+  <div id="form-modal" class="modal" hidden>
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="form-title">
+      <div class="modal__head">
+        <h2 id="form-title">Nuevo libro</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="pet-form" novalidate>
+        <input type="hidden" id="pet-id" />
+
+        <div class="field">
+          <label for="titulo">Título</label>
+          <input type="text" id="titulo" maxlength="120" placeholder="Ej: Cien años de soledad" />
+          <small class="field__error" data-for="titulo"></small>
+        </div>
+
+        <div class="field">
+          <label>Género</label>
+          <div class="species-picker" id="genre-picker"></div>
+          <input type="text" id="genero-otro" maxlength="40" placeholder="¿Cuál género?" hidden />
+          <small class="field__error" data-for="genero"></small>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="autor">Autor</label>
+            <input type="text" id="autor" maxlength="80" placeholder="Ej: Gabriel García Márquez" />
+            <small class="field__error" data-for="autor"></small>
+          </div>
+          <div class="field">
+            <label for="anio">Año de publicación</label>
+            <div class="stepper">
+              <button type="button" class="stepper__btn" data-step="-1" aria-label="Restar">−</button>
+              <input type="number" id="anio" min="1000" step="1" />
+              <button type="button" class="stepper__btn" data-step="1" aria-label="Sumar">+</button>
+            </div>
+            <small class="field__error" data-for="anio"></small>
+          </div>
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" id="disponible" checked />
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+          <span>Disponible para préstamo</span>
+        </label>
+
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="submit-btn">Guardar libro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal confirmar eliminación -->
+  <div id="confirm-modal" class="modal" hidden>
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__card modal__card--small" role="alertdialog" aria-modal="true">
+      <span class="confirm__icon">🗑️</span>
+      <h2>¿Eliminar “<span id="confirm-name"></span>”?</h2>
+      <p class="muted">Esta acción borra el registro de la base de datos y no se puede deshacer.</p>
+      <div class="modal__actions modal__actions--center">
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="button" class="btn btn--danger" id="confirm-delete-btn">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
